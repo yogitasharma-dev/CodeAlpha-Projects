@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BEATZ — Ultra Premium Music Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   GLOBAL RESET & VARIABLES
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-deep:     #04050a;
+  --bg-mid:      #0a0c16;
+  --bg-card:     #0f1120;
+  --bg-lift:     #151829;
+  --border:      rgba(255,255,255,0.06);
+  --border-glow: rgba(120,80,255,0.3);
+
+  --c1: #7b4fff;   /* electric violet */
+  --c2: #ff4fa3;   /* neon pink */
+  --c3: #00e5ff;   /* crystal cyan */
+  --c4: #ffb627;   /* golden amber */
+  --c5: #39ff6e;   /* acid green */
+
+  --grad-main:  linear-gradient(135deg, var(--c1), var(--c2));
+  --grad-cyan:  linear-gradient(135deg, var(--c3), var(--c1));
+  --grad-gold:  linear-gradient(135deg, var(--c4), var(--c2));
+
+  --text-1: #ffffff;
+  --text-2: rgba(255,255,255,0.65);
+  --text-3: rgba(255,255,255,0.35);
+
+  --r-card: 20px;
+  --r-btn:  50px;
+  --blur: 24px;
+
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM CRYSTAL CURSOR
+═══════════════════════════════════════════ */
+#cursor-crystal {
+  position: fixed;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, var(--c3) 60%, transparent 100%);
+  box-shadow: 0 0 12px var(--c3), 0 0 24px var(--c3), 0 0 48px rgba(0,229,255,0.4);
+  pointer-events: none;
+  z-index: 99999;
+  transition: transform 0.08s ease, width 0.2s ease, height 0.2s ease;
+  transform: translate(-50%,-50%);
+  mix-blend-mode: screen;
+}
+
+#cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,229,255,0.5);
+  pointer-events: none;
+  z-index: 99998;
+  transition: transform 0.18s ease, width 0.3s ease, height 0.3s ease, border-color 0.3s;
+  transform: translate(-50%,-50%);
+}
+
+#cursor-trail-container {
+  position: fixed; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events: none;
+  z-index: 99997;
+}
+
+.cursor-spark {
+  position: absolute;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: sparkFade 0.6s ease-out forwards;
+}
+
+@keyframes sparkFade {
+  0%   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(0) translateY(-20px); opacity: 0; }
+}
+
+/* Cursor hover states */
+body.hovering #cursor-crystal {
+  width: 20px; height: 20px;
+  box-shadow: 0 0 20px var(--c1), 0 0 40px var(--c2), 0 0 80px rgba(255,79,163,0.4);
+  background: radial-gradient(circle, #fff 0%, var(--c1) 50%, var(--c2) 100%);
+}
+body.hovering #cursor-ring {
+  width: 56px; height: 56px;
+  border-color: var(--c1);
+}
+body.clicking #cursor-crystal {
+  transform: translate(-50%,-50%) scale(0.5);
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATED BACKGROUND
+═══════════════════════════════════════════ */
+#bg-canvas {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+  animation: orbDrift 20s ease-in-out infinite alternate;
+}
+.orb-1 { width:600px; height:600px; background: var(--c1); top:-200px; left:-200px; animation-duration:18s; }
+.orb-2 { width:500px; height:500px; background: var(--c2); bottom:-200px; right:-100px; animation-duration:22s; animation-delay:-5s; }
+.orb-3 { width:400px; height:400px; background: var(--c3); top:40%; left:40%; animation-duration:15s; animation-delay:-9s; opacity:0.07; }
+
+@keyframes orbDrift {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(60px, 40px) scale(1.1); }
+  100% { transform: translate(-40px, 80px) scale(0.9); }
+}
+
+/* ═══════════════════════════════════════════
+   DOODLE CANVAS (Click/Hover Music Doodles)
+═══════════════════════════════════════════ */
+#doodle-canvas {
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+.wrapper {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER / NAV
+═══════════════════════════════════════════ */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem 2.5rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(4,5,10,0.7);
+  backdrop-filter: blur(var(--blur));
+  position: sticky; top:0; z-index:100;
+}
+
+.logo-mark {
+  display: flex; align-items: center; gap: 0.7rem;
+}
+
+.logo-icon {
+  width: 38px; height: 38px;
+  background: var(--grad-main);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  box-shadow: 0 0 20px rgba(123,79,255,0.6);
+  animation: logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%,100% { box-shadow: 0 0 20px rgba(123,79,255,0.6); }
+  50%      { box-shadow: 0 0 40px rgba(255,79,163,0.8); }
+}
+
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+  background: var(--grad-main);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.logo-text span {
+  background: var(--grad-cyan);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+nav { display: flex; align-items: center; gap: 0.4rem; }
+
+.nav-btn {
+  background: none; border: none; color: var(--text-3);
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 0.5rem 1rem; border-radius: var(--r-btn);
+  cursor: none; transition: all 0.2s; position: relative; overflow: hidden;
+}
+.nav-btn:hover { color: var(--text-1); background: rgba(255,255,255,0.07); }
+.nav-btn.active { color: var(--c3); }
+
+.header-right { display: flex; align-items: center; gap: 0.8rem; }
+
+.now-playing-pill {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 50px; padding: 0.4rem 1rem 0.4rem 0.6rem;
+  font-size: 0.75rem; color: var(--text-2); font-weight: 500;
+}
+
+.eq-bars-mini {
+  display: flex; align-items: flex-end; gap: 2px; height: 12px;
+}
+.eq-mini-bar {
+  width: 3px; background: var(--c3); border-radius: 2px;
+  animation: eqMini 0.5s ease-in-out infinite alternate;
+}
+.eq-mini-bar:nth-child(1){ animation-duration:0.4s; height:4px; }
+.eq-mini-bar:nth-child(2){ animation-duration:0.6s; height:8px; animation-delay:0.1s; }
+.eq-mini-bar:nth-child(3){ animation-duration:0.5s; height:6px; animation-delay:0.2s; }
+.eq-mini-bar:nth-child(4){ animation-duration:0.7s; height:10px; animation-delay:0.05s;}
+@keyframes eqMini { to { height: 12px; } }
+.eq-bars-mini.paused .eq-mini-bar { animation: none; height: 4px; }
+
+/* ═══════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════ */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: 1fr;
+  gap: 1.5rem;
+  padding: 2rem 2.5rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; padding: 1.2rem; }
+  header { padding: 1rem 1.2rem; }
+  .header-right .now-playing-pill { display: none; }
+}
+
+/* ═══════════════════════════════════════════
+   LEFT COLUMN
+═══════════════════════════════════════════ */
+.left-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* ── MAIN PLAYER CARD ── */
+.player-hero {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.4s;
+}
+
+.player-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 0%, rgba(123,79,255,0.12) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 100%, rgba(255,79,163,0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.player-hero > *:not(.art-tint) { position: relative; z-index: 1; }
+
+.player-hero.playing { border-color: rgba(123,79,255,0.35); }
+
+/* Art + Info row */
+.player-top {
+  display: flex; gap: 1.8rem; align-items: center;
+  margin-bottom: 2rem;
+}
+
+/* Album Art */
+.art-container {
+  position: relative; flex-shrink: 0;
+  width: 180px; height: 180px;
+}
+
+.art-glow-ring {
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(var(--c1), var(--c2), var(--c3), var(--c4), var(--c1));
+  animation: glowSpin 4s linear infinite;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.art-glow-ring.active { opacity: 1; }
+
+@keyframes glowSpin { to { transform: rotate(360deg); } }
+
+.art-glow-mask {
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  inset: 2px;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.art-frame {
+  position: relative; z-index: 2;
+  width: 180px; height: 180px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+#album-art {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease, filter 0.4s;
+}
+
+.art-frame:hover #album-art { transform: scale(1.05); }
+
+/* Playing album art shimmer */
+.art-shimmer {
+  position: absolute; inset: 0; z-index: 3;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+  opacity: 0; transition: opacity 0.3s;
+}
+.playing .art-shimmer { opacity: 1; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+/* Vinyl needle */
+.vinyl-needle {
+  position: absolute; top: -8px; right: -24px;
+  width: 48px; height: 80px; z-index: 4;
+  transform-origin: 50% 10%;
+  transform: rotate(-30deg);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.vinyl-needle.active { transform: rotate(0deg); }
+
+.needle-arm {
+  position: absolute; left: 22px; top: 0;
+  width: 4px; height: 68px;
+  background: linear-gradient(to bottom, #aaa, #666);
+  border-radius: 4px;
+}
+.needle-head {
+  position: absolute; bottom: 0; left: 14px;
+  width: 20px; height: 16px;
+  background: #888;
+  border-radius: 4px 4px 2px 2px;
+}
+.needle-tip {
+  position: absolute; bottom: -6px; left: 22px;
+  width: 4px; height: 8px;
+  background: #555;
+  border-radius: 0 0 2px 2px;
+}
+.needle-pivot {
+  position: absolute; top: 0; left: 18px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(#ddd, #888);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+/* Song Info */
+.player-info { flex: 1; min-width: 0; }
+
+.track-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.2);
+  color: var(--c3); font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.3rem 0.8rem; border-radius: 50px;
+  margin-bottom: 0.8rem;
+}
+
+#song-title {
+  font-family: var(--font-display);
+  font-size: 2.8rem; line-height: 1; letter-spacing: 0.02em;
+  color: var(--text-1); margin-bottom: 0.5rem;
+  transition: all 0.4s;
+}
+
+#song-artist {
+  font-size: 0.85rem; font-weight: 500;
+  color: var(--text-2); margin-bottom: 1.4rem;
+  letter-spacing: 0.05em;
+}
+
+.song-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.song-tag {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 50px; padding: 0.25rem 0.7rem;
+  font-size: 0.7rem; color: var(--text-3);
+  letter-spacing: 0.06em;
+}
+
+/* ── VISUALIZER ── */
+.visualizer-section {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+#viz-canvas {
+  width: 100%; height: 64px;
+  border-radius: 12px;
+  background: var(--bg-mid);
+  border: 1px solid var(--border);
+  display: block;
+}
+
+/* ── PROGRESS ── */
+.progress-section { margin-bottom: 1.6rem; }
+
+.prog-wrap {
+  height: 5px; background: rgba(255,255,255,0.07);
+  border-radius: 99px; cursor: none; position: relative;
+  transition: height 0.2s;
+}
+.prog-wrap:hover { height: 8px; }
+
+#prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c1), var(--c2), var(--c3));
+  background-size: 200% 100%;
+  border-radius: 99px; width: 0%;
+  transition: width 0.2s linear;
+  animation: progShift 3s linear infinite;
+  position: relative;
+}
+@keyframes progShift { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+
+#prog-fill::after {
+  content: '';
+  position: absolute; right: -2px; top: 50%;
+  transform: translateY(-50%);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px var(--c1), 0 0 16px var(--c2);
+  opacity: 0; transition: opacity 0.2s;
+}
+.prog-wrap:hover #prog-fill::after { opacity: 1; }
+
+.time-row {
+  display: flex; justify-content: space-between;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--text-3); font-weight: 700;
+}
+
+/* ── CONTROLS ── */
+.controls {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.6rem;
+}
+
+.controls-center { display: flex; align-items: center; gap: 0.8rem; }
+.controls-side { display: flex; align-items: center; gap: 0.4rem; }
+
+.ctrl-btn {
+  background: none; border: none; cursor: none;
+  color: var(--text-3); font-size: 1rem;
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+.ctrl-btn::before {
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background: rgba(255,255,255,0.0);
+  transition: background 0.2s;
+}
+.ctrl-btn:hover { color: var(--text-1); }
+.ctrl-btn:hover::before { background: rgba(255,255,255,0.08); }
+.ctrl-btn.lit { color: var(--c3); }
+.ctrl-btn.lit svg, .ctrl-btn.lit .icon { filter: drop-shadow(0 0 6px var(--c3)); }
+
+/* Play button */
+#play-btn {
+  width: 64px; height: 64px;
+  background: var(--grad-main);
+  color: #fff; font-size: 1.4rem;
+  border-radius: 50%;
+  box-shadow: 0 8px 32px rgba(123,79,255,0.5), 0 0 0 0 rgba(123,79,255,0.4);
+  transition: all 0.2s;
+  animation: none;
+}
+#play-btn.playing-pulse {
+  animation: playPulse 1.5s ease-in-out infinite;
+}
+@keyframes playPulse {
+  0%,100% { box-shadow: 0 8px 32px rgba(123,79,255,0.5), 0 0 0 0 rgba(123,79,255,0.4); }
+  50%      { box-shadow: 0 8px 48px rgba(255,79,163,0.6), 0 0 0 14px rgba(123,79,255,0); }
+}
+#play-btn:hover { transform: scale(1.08); }
+
+/* ── VOLUME ── */
+.vol-section {
+  display: flex; align-items: center; gap: 0.8rem;
+  margin-bottom: 1.4rem;
+}
+.vol-icon { color: var(--text-3); font-size: 0.9rem; flex-shrink:0; }
+
+.vol-track {
+  flex: 1; height: 4px; background: rgba(255,255,255,0.07);
+  border-radius: 99px; position: relative; cursor: none;
+  transition: height 0.2s;
+}
+.vol-track:hover { height: 7px; }
+
+.vol-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c1), var(--c3));
+  border-radius: 99px;
+  pointer-events: none;
+}
+
+input[type="range"].vol-slider {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: 0; cursor: none; margin: 0; padding: 0;
+  -webkit-appearance: none;
+}
+
+#vol-pct { font-size: 0.72rem; color: var(--text-3); font-family: var(--font-mono); font-weight:700; width:34px; text-align:right; }
+
+/* ── EXTRA CONTROLS ROW ── */
+.extra-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+}
+.extra-left { display: flex; align-items: center; gap: 0.6rem; }
+.extra-right { display: flex; align-items: center; gap: 0.5rem; }
+
+.toggle-pill {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-size: 0.75rem; color: var(--text-3); font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+.toggle { position: relative; width: 38px; height: 20px; cursor: none; }
+.toggle input { opacity:0; width:0; height:0; }
+.tog-track {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px; cursor: none;
+  transition: background 0.2s;
+}
+.tog-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle input:checked ~ .tog-track { background: rgba(123,79,255,0.4); }
+.toggle input:checked ~ .tog-thumb { transform: translateX(18px); background: var(--c1); box-shadow: 0 0 8px var(--c1); }
+
+.icon-btn {
+  width: 34px; height: 34px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-3);
+  font-size: 0.85rem; cursor: none;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-1); border-color: rgba(255,255,255,0.15); }
+.icon-btn.liked { color: var(--c2); border-color: rgba(255,79,163,0.3); background: rgba(255,79,163,0.08); }
+
+/* ═══════════════════════════════════════════
+   EQUALIZER CARD
+═══════════════════════════════════════════ */
+.eq-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 1.4rem;
+  position: relative; overflow: hidden;
+}
+.eq-card::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 0% 100%, rgba(0,229,255,0.06) 0%, transparent 60%);
+}
+
+.card-label {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 1rem;
+}
+
+.eq-sliders {
+  display: flex; gap: 0.8rem; align-items: flex-end; justify-content: center;
+  height: 80px;
+}
+
+.eq-band {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  flex: 1;
+}
+
+input[type="range"].eq-fader {
+  -webkit-appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 24px; height: 70px;
+  cursor: none; outline: none;
+  accent-color: var(--c1);
+}
+
+.eq-freq {
+  font-size: 0.58rem; color: var(--text-3);
+  font-family: var(--font-mono); text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   RIGHT COLUMN — PLAYLIST
+═══════════════════════════════════════════ */
+.right-col { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.playlist-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px; overflow: hidden;
+  display: flex; flex-direction: column;
+  max-height: calc(100vh - 12rem);
+  position: sticky; top: 6rem;
+}
+
+.pl-header {
+  padding: 1.4rem 1.4rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.pl-header-left h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem; letter-spacing: 0.06em;
+  color: var(--text-1);
+}
+
+.pl-header-left p {
+  font-size: 0.72rem; color: var(--text-3); margin-top: 0.2rem;
+}
+
+.pl-header-right { display: flex; gap: 0.4rem; }
+
+.pl-list {
+  flex: 1; overflow-y: auto; padding: 0.6rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+.pl-list::-webkit-scrollbar { width: 4px; }
+.pl-list::-webkit-scrollbar-track { background: transparent; }
+.pl-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* Playlist Item */
+.pl-item {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.7rem 0.8rem; border-radius: 12px;
+  cursor: none; transition: background 0.15s;
+  position: relative; overflow: hidden;
+}
+.pl-item::before {
+  content:''; position:absolute; left:0; top:0; bottom:0;
+  width: 0; background: linear-gradient(90deg, rgba(123,79,255,0.15), transparent);
+  transition: width 0.3s; border-radius: 0 12px 12px 0;
+}
+.pl-item:hover::before { width: 100%; }
+.pl-item:hover { background: rgba(255,255,255,0.04); }
+
+.pl-item.active {
+  background: rgba(123,79,255,0.1);
+  border: 1px solid rgba(123,79,255,0.2);
+}
+.pl-item.active::before { display: none; }
+
+.pl-num {
+  font-size: 0.68rem; color: var(--text-3);
+  font-family: var(--font-mono); font-weight: 700;
+  width: 16px; text-align: center; flex-shrink: 0;
+}
+.pl-item.active .pl-num { display: none; }
+
+.eq-indicator {
+  display: none; align-items: flex-end; gap: 1.5px; height: 14px; width: 16px; flex-shrink: 0;
+}
+.pl-item.active .eq-indicator { display: flex; }
+.eq-bar {
+  width: 3px; border-radius: 2px;
+  background: var(--c1);
+}
+.pl-item.active.is-playing .eq-bar {
+  animation: eqBar 0.5s ease-in-out infinite alternate;
+}
+.pl-item.active.is-playing .eq-bar:nth-child(1){ height:4px;  animation-duration:0.4s; }
+.pl-item.active.is-playing .eq-bar:nth-child(2){ height:8px;  animation-duration:0.6s; animation-delay:0.1s; }
+.pl-item.active.is-playing .eq-bar:nth-child(3){ height:5px;  animation-duration:0.5s; animation-delay:0.2s; }
+.pl-item.active:not(.is-playing) .eq-bar { height: 4px; }
+@keyframes eqBar { to { height: 14px; } }
+
+.pl-thumb {
+  width: 46px; height: 46px; border-radius: 10px;
+  object-fit: cover; flex-shrink: 0;
+  border: 1px solid var(--border);
+  transition: transform 0.2s;
+}
+.pl-item:hover .pl-thumb { transform: scale(1.05); }
+.pl-item.active .pl-thumb { box-shadow: 0 0 12px rgba(123,79,255,0.4); }
+
+.pl-info { flex: 1; min-width: 0; }
+.pl-title {
+  font-size: 0.84rem; font-weight: 600; color: var(--text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color 0.2s;
+}
+.pl-item.active .pl-title { color: var(--c1); }
+.pl-artist {
+  font-size: 0.7rem; color: var(--text-3); margin-top: 0.15rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.pl-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
+.pl-dur { font-size: 0.68rem; color: var(--text-3); font-family: var(--font-mono); }
+.pl-like {
+  font-size: 0.75rem; opacity: 0; transition: opacity 0.2s, color 0.2s;
+  cursor: none; background: none; border: none; color: var(--text-3);
+}
+.pl-item:hover .pl-like { opacity: 1; }
+.pl-like.liked { opacity: 1; color: var(--c2); }
+
+/* ── MINI STATS CARD ── */
+.stats-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 1.2rem;
+}
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+
+.stat-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.8rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.stat-item:hover { border-color: var(--border-glow); background: rgba(123,79,255,0.06); }
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem; letter-spacing: 0.04em;
+  background: var(--grad-main);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-label {
+  font-size: 0.65rem; color: var(--text-3);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.2rem;
+}
+
+/* ═══════════════════════════════════════════
+   BOTTOM MINI PLAYER (STICKY)
+═══════════════════════════════════════════ */
+.mini-player {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(10,12,22,0.85);
+  backdrop-filter: blur(var(--blur));
+  border-top: 1px solid var(--border);
+  padding: 0.7rem 2.5rem;
+  display: flex; align-items: center; gap: 1.5rem;
+  transform: translateY(0);
+  transition: transform 0.3s;
+}
+
+.mini-art {
+  width: 42px; height: 42px; border-radius: 8px;
+  object-fit: cover; flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.mini-info { flex: 0 0 200px; min-width: 0; }
+.mini-title { font-size: 0.82rem; font-weight: 600; color: var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mini-artist{ font-size: 0.7rem; color: var(--text-3); }
+
+.mini-prog-wrap {
+  flex: 1; height: 3px;
+  background: rgba(255,255,255,0.07); border-radius:99px;
+  cursor: none; position: relative;
+}
+#mini-prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c1), var(--c2));
+  border-radius: 99px; width: 0%;
+  transition: width 0.2s linear;
+}
+
+.mini-controls { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════
+   TOAST NOTIFICATION
+═══════════════════════════════════════════ */
+.toast-container {
+  position: fixed; top: 5rem; right: 1.5rem; z-index: 200;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-lift);
+  border: 1px solid var(--border);
+  border-radius: 12px; padding: 0.7rem 1.1rem;
+  font-size: 0.78rem; color: var(--text-2);
+  display: flex; align-items: center; gap: 0.6rem;
+  backdrop-filter: blur(12px);
+  animation: toastIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.toast-icon { font-size: 1rem; }
+
+@keyframes toastIn {
+  from { transform: translateX(120%) scale(0.8); opacity: 0; }
+  to   { transform: translateX(0) scale(1); opacity: 1; }
+}
+@keyframes toastOut {
+  to   { transform: translateX(120%) scale(0.8); opacity: 0; }
+}
+.toast.removing { animation: toastOut 0.3s ease-in forwards; }
+
+/* ═══════════════════════════════════════════
+   ONBOARDING SCREEN
+═══════════════════════════════════════════ */
+#splash {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg-deep);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1.5rem;
+  animation: splashOut 0.6s 1.8s ease-in-out forwards;
+}
+
+@keyframes splashOut {
+  to { opacity: 0; pointer-events: none; }
+}
+
+.splash-logo {
+  font-family: var(--font-display);
+  font-size: 6rem; letter-spacing: 0.2em;
+  background: var(--grad-main);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: splashLogoIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  opacity: 0;
+}
+@keyframes splashLogoIn {
+  from { transform: scale(0.5) translateY(30px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.splash-tagline {
+  font-size: 0.85rem; color: var(--text-3); letter-spacing: 0.2em;
+  text-transform: uppercase; animation: fadeUp 0.5s 0.5s ease forwards; opacity: 0;
+}
+@keyframes fadeUp {
+  from { transform: translateY(12px); opacity:0; }
+  to   { transform: translateY(0); opacity:1; }
+}
+
+.splash-bar-wrap {
+  width: 200px; height: 3px;
+  background: rgba(255,255,255,0.06); border-radius: 99px;
+  overflow: hidden;
+}
+.splash-bar-fill {
+  height: 100%;
+  background: var(--grad-main);
+  border-radius: 99px;
+  animation: splashLoad 1.5s 0.3s ease-in-out forwards;
+  width: 0%;
+}
+@keyframes splashLoad { to { width: 100%; } }
+
+/* ═══════════════════════════════════════════
+   MISC UTILITIES
+═══════════════════════════════════════════ */
+.gradient-text {
+  background: var(--grad-main);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.glow-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--c5);
+  box-shadow: 0 0 6px var(--c5), 0 0 12px var(--c5);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+@keyframes dotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 6px; }
+
+/* ── Page bottom spacing for mini player ── */
+.main { padding-bottom: 5rem; }
+
+/* ═══════════════════════════════════════════
+   ALBUM GALLERY SECTION
+═══════════════════════════════════════════ */
+.album-gallery {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 1.4rem;
+  overflow: hidden;
+  position: relative;
+}
+.album-gallery::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse at 100% 0%, rgba(255,79,163,0.06) 0%, transparent 60%);
+  pointer-events:none;
+}
+.gallery-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+.gallery-scroll::-webkit-scrollbar { height: 4px; }
+.gallery-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius:4px; }
+.album-tile {
+  flex: 0 0 130px;
+  cursor: none;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  border: 2px solid transparent;
+}
+.album-tile:hover { transform: scale(1.07) translateY(-4px); border-color: rgba(255,255,255,0.2); }
+.album-tile.active { border-color: var(--c1); box-shadow: 0 0 20px rgba(123,79,255,0.5); }
+.album-tile img { width: 130px; height: 130px; object-fit: cover; display: block; transition: transform 0.4s; }
+.album-tile:hover img { transform: scale(1.08); }
+.album-tile-overlay {
+  position: absolute; inset:0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 0.6rem;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.album-tile:hover .album-tile-overlay,
+.album-tile.active .album-tile-overlay { opacity: 1; }
+.album-tile-title { font-size: 0.72rem; font-weight: 700; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.album-tile-artist { font-size: 0.62rem; color: rgba(255,255,255,0.6); margin-top: 0.15rem; }
+.album-tile-play {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%) scale(0.6);
+  width: 36px; height: 36px;
+  background: rgba(123,79,255,0.9);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.album-tile:hover .album-tile-play { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+.art-tint {
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: 24px; opacity: 0.07;
+  transition: background 0.8s ease;
+}
+.album-name-tag { font-size: 0.68rem; color: var(--text-3); letter-spacing: 0.08em; margin-top: 0.3rem; }
+.album-name-tag span { color: var(--c4); }
+
+/* ── Entry animations ── */
+.player-hero { animation: cardIn 0.6s 2s cubic-bezier(0.34,1.2,0.64,1) backwards; }
+.eq-card      { animation: cardIn 0.6s 2.1s cubic-bezier(0.34,1.2,0.64,1) backwards; }
+.playlist-card{ animation: cardIn 0.6s 2.15s cubic-bezier(0.34,1.2,0.64,1) backwards; }
+.stats-card   { animation: cardIn 0.6s 2.2s cubic-bezier(0.34,1.2,0.64,1) backwards; }
+
+@keyframes cardIn {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Click ripple ── */
+.ripple-burst {
+  position: fixed; pointer-events: none; z-index: 9000;
+  border-radius: 50%; transform: translate(-50%,-50%) scale(0);
+  animation: rippleBurst 0.6s ease-out forwards;
+}
+@keyframes rippleBurst {
+  to { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-logo">BEATZ</div>
+  <div class="splash-tagline">Ultra Premium Music Studio</div>
+  <div class="splash-bar-wrap"><div class="splash-bar-fill"></div></div>
+</div>
+
+<!-- BACKGROUND ORBS -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor-crystal"></div>
+<div id="cursor-ring"></div>
+<canvas id="doodle-canvas"></canvas>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- WRAPPER -->
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-mark">
+      <div class="logo-icon">🎵</div>
+      <div class="logo-text">BEAT<span>Z</span></div>
+    </div>
+    <nav>
+      <button class="nav-btn active">Home</button>
+      <button class="nav-btn">Discover</button>
+      <button class="nav-btn">Library</button>
+      <button class="nav-btn">Radio</button>
+    </nav>
+    <div class="header-right">
+      <div class="now-playing-pill">
+        <div class="eq-bars-mini paused" id="header-eq">
+          <div class="eq-mini-bar"></div>
+          <div class="eq-mini-bar"></div>
+          <div class="eq-mini-bar"></div>
+          <div class="eq-mini-bar"></div>
+        </div>
+        <span id="header-np">Select a song</span>
+      </div>
+      <div class="glow-dot"></div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT -->
+    <div class="left-col">
+
+      <!-- PLAYER HERO -->
+      <div class="player-hero" id="player-hero">
+        <div class="art-tint" id="art-tint"></div>
+        <div class="player-top">
+
+          <!-- Art -->
+          <div class="art-container">
+            <div class="art-glow-ring" id="art-glow-ring">
+              <div class="art-glow-mask"></div>
+            </div>
+            <div class="art-frame">
+              <img id="album-art" src="https://picsum.photos/seed/music1/400/400" alt="Album Art">
+              <div class="art-shimmer"></div>
+            </div>
+            <div class="vinyl-needle" id="vinyl-needle">
+              <div class="needle-pivot"></div>
+              <div class="needle-arm"></div>
+              <div class="needle-head"></div>
+              <div class="needle-tip"></div>
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="player-info">
+            <div class="track-badge">
+              <div class="glow-dot" style="width:5px;height:5px;"></div>
+              Now Playing
+            </div>
+            <div id="song-title">Acoustic Breeze</div>
+            <div id="song-artist">Bensound · Free Music</div>
+            <div class="album-name-tag">Album: <span id="song-album">Morning Sessions</span></div>
+            <div class="song-tags">
+              <span class="song-tag">Ambient</span>
+              <span class="song-tag">Chill</span>
+              <span class="song-tag">✦ HD</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISUALIZER -->
+        <div class="visualizer-section">
+          <canvas id="viz-canvas" height="64"></canvas>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="progress-section">
+          <div class="prog-wrap" id="prog-wrap">
+            <div id="prog-fill"></div>
+          </div>
+          <div class="time-row">
+            <span id="cur-time">0:00</span>
+            <span id="dur-time">0:00</span>
+          </div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div class="controls">
+          <div class="controls-side">
+            <button class="ctrl-btn" id="shuf-btn" onclick="toggleShuffle()" title="Shuffle">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+              </svg>
+            </button>
+          </div>
+          <div class="controls-center">
+            <button class="ctrl-btn" onclick="prevSong()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+            </button>
+            <button class="ctrl-btn" id="play-btn" onclick="togglePlay()">
+              <svg id="play-icon" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="ctrl-btn" onclick="nextSong()">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4-5.5 4V6l5.5 4-5.5 4z"/><rect x="16" y="6" width="2" height="12"/></svg>
+            </button>
+          </div>
+          <div class="controls-side">
+            <button class="ctrl-btn" id="rep-btn" onclick="toggleRepeat()" title="Repeat">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- VOLUME -->
+        <div class="vol-section">
+          <span class="vol-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          </span>
+          <div class="vol-track" id="vol-track">
+            <div class="vol-fill" id="vol-fill" style="width:75%"></div>
+            <input type="range" class="vol-slider" id="vol" min="0" max="100" value="75" oninput="setVol(this.value)">
+          </div>
+          <span id="vol-pct">75%</span>
+        </div>
+
+        <!-- EXTRA CONTROLS -->
+        <div class="extra-controls">
+          <div class="extra-left">
+            <div class="toggle-pill">
+              Autoplay
+              <label class="toggle">
+                <input type="checkbox" id="autoplay" checked>
+                <div class="tog-track"></div>
+                <div class="tog-thumb"></div>
+              </label>
+            </div>
+          </div>
+          <div class="extra-right">
+            <button class="icon-btn" id="like-btn" onclick="toggleLike()" title="Like">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </button>
+            <button class="icon-btn" title="Add to Queue">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+            <button class="icon-btn" title="Share">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EQ CARD -->
+      <div class="eq-card">
+        <div class="card-label">🎚 Equalizer</div>
+        <div class="eq-sliders">
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="60" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">60Hz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="70" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">170Hz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="80" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">310Hz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="65" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">600Hz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="75" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">1kHz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="70" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">3kHz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="55" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">6kHz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="60" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">12kHz</div></div>
+          <div class="eq-band"><input type="range" class="eq-fader" min="0" max="100" value="65" style="-webkit-appearance:slider-vertical;writing-mode:bt-lr;"><div class="eq-freq">16kHz</div></div>
+        </div>
+      </div>
+
+      <!-- ALBUM GALLERY -->
+      <div class="album-gallery" id="album-gallery">
+        <div class="card-label">🖼 Album Art Gallery</div>
+        <div class="gallery-scroll" id="gallery-scroll"></div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- RIGHT -->
+    <div class="right-col">
+
+      <!-- PLAYLIST -->
+      <div class="playlist-card">
+        <div class="pl-header">
+          <div class="pl-header-left">
+            <h2>Playlist</h2>
+            <p id="pl-subtitle">6 songs · 16 min</p>
+          </div>
+          <div class="pl-header-right">
+            <button class="icon-btn" title="Shuffle all" onclick="toggleShuffle()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+              </svg>
+            </button>
+            <button class="icon-btn" title="Loop all">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="pl-list" id="pl-list"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-card">
+        <div class="card-label">📊 Session Stats</div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-played">0</div>
+            <div class="stat-label">Songs Played</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-likes">0</div>
+            <div class="stat-label">Liked</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-mins">0</div>
+            <div class="stat-label">Min Listened</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-skips">0</div>
+            <div class="stat-label">Skips</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-col -->
+  </div><!-- /main -->
+
+</div><!-- /wrapper -->
+
+<!-- MINI PLAYER (STICKY BOTTOM) -->
+<div class="mini-player" id="mini-player">
+  <img class="mini-art" id="mini-art" src="https://picsum.photos/seed/music1/400/400" alt="">
+  <div class="mini-info">
+    <div class="mini-title" id="mini-title">Acoustic Breeze</div>
+    <div class="mini-artist" id="mini-artist">Bensound</div>
+  </div>
+  <div class="mini-prog-wrap" id="mini-prog-wrap">
+    <div id="mini-prog-fill"></div>
+  </div>
+  <div class="mini-controls">
+    <button class="ctrl-btn" onclick="prevSong()" style="width:34px;height:34px;font-size:0.9rem;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+    </button>
+    <button class="ctrl-btn" id="mini-play-btn" onclick="togglePlay()" style="width:38px;height:38px;background:var(--grad-main);color:#fff;border-radius:50%;">
+      <svg id="mini-play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button class="ctrl-btn" onclick="nextSong()" style="width:34px;height:34px;font-size:0.9rem;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6 5.5 4-5.5 4V6l5.5 4-5.5 4z"/><rect x="16" y="6" width="2" height="12"/></svg>
+    </button>
+  </div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+/* ════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════ */
+const songs = [
+  {
+    title:'Acoustic Breeze', artist:'Bensound', album:'Morning Sessions',
+    src:'https://www.bensound.com/bensound-music/bensound-acousticbreeze.mp3',
+    art:'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=120&q=80',
+    duration:'2:37', tags:['Acoustic','Chill'], color:'#a78bfa'
+  },
+  {
+    title:'Creative Minds', artist:'Bensound', album:'Inspirations Vol.1',
+    src:'https://www.bensound.com/bensound-music/bensound-creativeminds.mp3',
+    art:'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=120&q=80',
+    duration:'2:31', tags:['Upbeat','Pop'], color:'#f472b6'
+  },
+  {
+    title:'Sunny', artist:'Bensound', album:'Summer Vibes',
+    src:'https://www.bensound.com/bensound-music/bensound-sunny.mp3',
+    art:'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=120&q=80',
+    duration:'2:20', tags:['Summer','Bright'], color:'#fbbf24'
+  },
+  {
+    title:'Ukulele', artist:'Bensound', album:'Happy Days',
+    src:'https://www.bensound.com/bensound-music/bensound-ukulele.mp3',
+    art:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=120&q=80',
+    duration:'1:59', tags:['Happy','Folk'], color:'#34d399'
+  },
+  {
+    title:'Dreams', artist:'Bensound', album:'Night Drift',
+    src:'https://www.bensound.com/bensound-music/bensound-dreams.mp3',
+    art:'https://images.unsplash.com/photo-1446057032654-9d8885db76c6?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1446057032654-9d8885db76c6?w=120&q=80',
+    duration:'3:43', tags:['Dream','Ambient'], color:'#60a5fa'
+  },
+  {
+    title:'Tenderness', artist:'Bensound', album:'Piano Stories',
+    src:'https://www.bensound.com/bensound-music/bensound-tenderness.mp3',
+    art:'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=500&q=80',
+    thumb:'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=120&q=80',
+    duration:'3:22', tags:['Soft','Piano'], color:'#f87171'
+  },
+];
+
+let curIdx=0, isPlaying=false, isShuffle=false, isRepeat=false;
+let statsPlayed=0, statsLikes=0, statsMins=0, statsSkips=0;
+let likedSongs=new Set();
+const audio = document.getElementById('audio');
+
+/* ════════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════════ */
+const crystal = document.getElementById('cursor-crystal');
+const ring    = document.getElementById('cursor-ring');
+const doodleCanvas = document.getElementById('doodle-canvas');
+const dCtx = doodleCanvas.getContext('2d');
+
+let mx=0, my=0, rx=0, ry=0;
+let sparkColors = ['#7b4fff','#ff4fa3','#00e5ff','#ffb627','#39ff6e'];
+
+function resizeDoodle(){
+  doodleCanvas.width = window.innerWidth;
+  doodleCanvas.height = window.innerHeight;
+}
+resizeDoodle();
+window.addEventListener('resize', resizeDoodle);
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  crystal.style.left = mx+'px';
+  crystal.style.top  = my+'px';
+  // Spawn cursor trail sparks
+  if(isPlaying && Math.random()<0.35) spawnSpark(mx, my);
+  if(Math.random()<0.12) drawMusicDoodle(mx, my);
+});
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+(function animRing(){
+  rx = lerp(rx, mx, 0.12);
+  ry = lerp(ry, my, 0.12);
+  ring.style.left = rx+'px';
+  ring.style.top  = ry+'px';
+  requestAnimationFrame(animRing);
+})();
+
+document.querySelectorAll('button, a, input, .pl-item, .prog-wrap, .vol-track, .mini-prog-wrap, .icon-btn, .ctrl-btn, .pl-like').forEach(el => {
+  el.addEventListener('mouseenter', ()=> document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', ()=> document.body.classList.remove('hovering'));
+});
+
+document.addEventListener('mousedown', ()=>{
+  document.body.classList.add('clicking');
+  createClickBurst(mx,my);
+});
+document.addEventListener('mouseup', ()=> document.body.classList.remove('clicking'));
+
+function spawnSpark(x,y){
+  const s = document.createElement('div');
+  s.className = 'cursor-spark';
+  s.style.cssText = `left:${x}px;top:${y}px;background:${sparkColors[Math.floor(Math.random()*sparkColors.length)]};animation-duration:${0.4+Math.random()*0.4}s;`;
+  document.getElementById('cursor-trail-container').appendChild(s);
+  setTimeout(()=>s.remove(), 800);
+}
+
+/* ════════════════════════════════════════════
+   MUSIC DOODLE CANVAS (cursor hover doodles)
+════════════════════════════════════════════ */
+let doodleAlpha = 0.15;
+const doodleSymbols = ['♩','♪','♫','♬','🎵','✦','◈','⬡'];
+let doodleParticles = [];
+
+function drawMusicDoodle(x, y){
+  const p = {
+    x, y,
+    symbol: doodleSymbols[Math.floor(Math.random()*doodleSymbols.length)],
+    color: sparkColors[Math.floor(Math.random()*sparkColors.length)],
+    size: 10 + Math.random()*14,
+    alpha: 0.8,
+    vx: (Math.random()-0.5)*1.5,
+    vy: -(0.5+Math.random()*2),
+    life: 60 + Math.random()*40,
+    age: 0,
+    rot: Math.random()*Math.PI*2,
+    rotSpeed: (Math.random()-0.5)*0.1
+  };
+  doodleParticles.push(p);
+}
+
+(function animDoodles(){
+  dCtx.clearRect(0,0,doodleCanvas.width, doodleCanvas.height);
+  doodleParticles = doodleParticles.filter(p => p.age < p.life);
+  doodleParticles.forEach(p => {
+    p.age++;
+    p.x += p.vx; p.y += p.vy;
+    p.rot += p.rotSpeed;
+    const progress = p.age/p.life;
+    const alpha = p.alpha * (1-progress);
+    dCtx.save();
+    dCtx.translate(p.x, p.y);
+    dCtx.rotate(p.rot);
+    dCtx.globalAlpha = alpha;
+    dCtx.fillStyle = p.color;
+    dCtx.font = `${p.size}px serif`;
+    dCtx.textAlign = 'center';
+    dCtx.textBaseline = 'middle';
+    dCtx.shadowColor = p.color;
+    dCtx.shadowBlur = 8;
+    dCtx.fillText(p.symbol, 0, 0);
+    dCtx.restore();
+  });
+  requestAnimationFrame(animDoodles);
+})();
+
+/* ════════════════════════════════════════════
+   CLICK CRYSTAL BURST
+════════════════════════════════════════════ */
+function createClickBurst(x,y){
+  // Crystal ripple
+  const r = document.createElement('div');
+  r.className = 'ripple-burst';
+  r.style.cssText = `left:${x}px;top:${y}px;width:80px;height:80px;border:2px solid ${sparkColors[Math.floor(Math.random()*sparkColors.length)]};`;
+  document.body.appendChild(r);
+  setTimeout(()=>r.remove(), 600);
+
+  // Explode music notes from click
+  for(let i=0;i<6;i++){
+    setTimeout(()=>{
+      const angle = (i/6)*Math.PI*2;
+      const dist = 40+Math.random()*30;
+      drawMusicDoodle(x+Math.cos(angle)*10, y+Math.sin(angle)*10);
+    }, i*20);
+  }
+  // Sparks
+  for(let i=0;i<8;i++){
+    const angle=(i/8)*Math.PI*2;
+    const s = document.createElement('div');
+    s.className='cursor-spark';
+    s.style.cssText=`left:${x}px;top:${y}px;background:${sparkColors[i%sparkColors.length]};width:5px;height:5px;animation-duration:0.8s;`;
+    document.getElementById('cursor-trail-container').appendChild(s);
+    setTimeout(()=>s.remove(), 900);
+  }
+}
+
+/* ════════════════════════════════════════════
+   FAKE VISUALIZER (canvas bars)
+════════════════════════════════════════════ */
+const vizCanvas = document.getElementById('viz-canvas');
+const vCtx = vizCanvas.getContext('2d');
+let vizBars = Array.from({length:60},(_,i)=>({h:20+Math.random()*20, target:20+Math.random()*20, speed:0.05+Math.random()*0.05}));
+
+function animViz(){
+  vizCanvas.width = vizCanvas.offsetWidth;
+  const W = vizCanvas.width, H = 64;
+  vCtx.clearRect(0,0,W,H);
+
+  const barW = W/vizBars.length - 1.5;
+
+  vizBars.forEach((b,i) => {
+    if(isPlaying){
+      b.target = 8 + Math.random()*(H-10);
+      if(Math.random()<0.05) b.target = H*0.9;
+    } else {
+      b.target = 6 + Math.sin(Date.now()*0.001+i*0.3)*6;
+    }
+    b.h += (b.target-b.h)*0.15;
+
+    const x = i*(barW+1.5);
+    const hh = b.h;
+    const progress = i/vizBars.length;
+
+    // Color gradient across bars
+    const hue1 = 260+(progress*120);
+    const hue2 = hue1+30;
+    const grad = vCtx.createLinearGradient(x, H-hh, x, H);
+    grad.addColorStop(0, `hsla(${hue1},100%,70%,0.9)`);
+    grad.addColorStop(1, `hsla(${hue2},100%,50%,0.3)`);
+    vCtx.fillStyle = grad;
+    vCtx.beginPath();
+    vCtx.roundRect(x, H-hh, barW, hh, 2);
+    vCtx.fill();
+  });
+  requestAnimationFrame(animViz);
+}
+animViz();
+
+/* ════════════════════════════════════════════
+   PLAYLIST
+════════════════════════════════════════════ */
+function buildPlaylist(){
+  const list = document.getElementById('pl-list');
+  list.innerHTML='';
+  songs.forEach((s,i)=>{
+    const item=document.createElement('div');
+    const active=(i===curIdx);
+    const playing=(active&&isPlaying);
+    item.className='pl-item'+(active?' active':'')+(playing?' is-playing':'');
+    item.innerHTML=`
+      <div class="eq-indicator">
+        <div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div>
+      </div>
+      <span class="pl-num">${i+1}</span>
+      <img class="pl-thumb" src="${s.thumb}" alt="" loading="lazy">
+      <div class="pl-info">
+        <div class="pl-title">${s.title}</div>
+        <div class="pl-artist">${s.artist}</div>
+      </div>
+      <div class="pl-right">
+        <span class="pl-dur">${s.duration}</span>
+        <button class="pl-like ${likedSongs.has(i)?'liked':''}" onclick="toggleLikeSong(event,${i})">
+          ${likedSongs.has(i)?'♥':'♡'}
+        </button>
+      </div>
+    `;
+    item.addEventListener('click',()=>{ curIdx=i; loadSong(); playSong(); });
+    item.querySelectorAll('button,input').forEach(el=>{
+      el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+      el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+    });
+    list.appendChild(item);
+  });
+}
+
+/* ════════════════════════════════════════════
+   LOAD / PLAY / PAUSE
+════════════════════════════════════════════ */
+function buildGallery(){
+  const scroll = document.getElementById('gallery-scroll');
+  scroll.innerHTML = '';
+  songs.forEach((s,i) => {
+    const tile = document.createElement('div');
+    tile.className = 'album-tile' + (i===curIdx?' active':'');
+    tile.innerHTML = `
+      <img src="${s.art}" alt="${s.title}" loading="lazy">
+      <div class="album-tile-play">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+      </div>
+      <div class="album-tile-overlay">
+        <div class="album-tile-title">${s.title}</div>
+        <div class="album-tile-artist">${s.album}</div>
+      </div>
+    `;
+    tile.addEventListener('click', ()=>{ curIdx=i; loadSong(); playSong(); });
+    tile.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+    tile.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+    scroll.appendChild(tile);
+  });
+}
+
+function loadSong(){
+  const s=songs[curIdx];
+  audio.src=s.src;
+
+  // Dynamic tint color from song's accent color
+  document.getElementById('art-tint').style.background = s.color;
+
+  // Animate art switch
+  const art=document.getElementById('album-art');
+  art.style.opacity='0'; art.style.transform='scale(0.92)';
+  setTimeout(()=>{
+    art.src=s.art;
+    art.style.opacity='1'; art.style.transform='scale(1)';
+    art.style.transition='opacity 0.5s, transform 0.5s';
+  },200);
+
+  document.getElementById('mini-art').src=s.art;
+
+  // Title animate out/in
+  const title=document.getElementById('song-title');
+  title.style.transform='translateY(-8px)'; title.style.opacity='0';
+  setTimeout(()=>{
+    title.textContent=s.title;
+    title.style.transform='translateY(0)'; title.style.opacity='1';
+    title.style.transition='all 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+  },150);
+
+  document.getElementById('song-artist').textContent=s.artist+' · Free Music';
+  document.getElementById('song-album').textContent=s.album;
+  document.getElementById('mini-title').textContent=s.title;
+  document.getElementById('mini-artist').textContent=s.artist;
+  document.getElementById('header-np').textContent=s.title;
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('mini-prog-fill').style.width='0%';
+  document.getElementById('cur-time').textContent='0:00';
+  document.getElementById('dur-time').textContent=s.duration;
+
+  // Update like button state
+  const likeBtn = document.getElementById('like-btn');
+  if(likedSongs.has(curIdx)) likeBtn.classList.add('liked'); else likeBtn.classList.remove('liked');
+
+  buildPlaylist();
+  buildGallery();
+}
+
+function playSong(){
+  audio.play().catch(()=>{});
+  isPlaying=true;
+
+  // Update icons
+  document.getElementById('play-icon').innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  document.getElementById('mini-play-icon').innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  document.getElementById('play-btn').classList.add('playing-pulse');
+
+  // Needle
+  document.getElementById('vinyl-needle').classList.add('active');
+  document.getElementById('art-glow-ring').classList.add('active');
+  document.getElementById('player-hero').classList.add('playing');
+  document.querySelector('.art-shimmer').style.opacity='1';
+
+  // Header EQ
+  document.getElementById('header-eq').classList.remove('paused');
+
+  statsPlayed++; updateStats();
+  buildPlaylist();
+}
+
+function pauseSong(){
+  audio.pause();
+  isPlaying=false;
+  document.getElementById('play-icon').innerHTML='<path d="M8 5v14l11-7z"/>';
+  document.getElementById('mini-play-icon').innerHTML='<path d="M8 5v14l11-7z"/>';
+  document.getElementById('play-btn').classList.remove('playing-pulse');
+  document.getElementById('vinyl-needle').classList.remove('active');
+  document.getElementById('art-glow-ring').classList.remove('active');
+  document.getElementById('player-hero').classList.remove('playing');
+  document.querySelector('.art-shimmer').style.opacity='0';
+  document.getElementById('header-eq').classList.add('paused');
+  buildPlaylist();
+}
+
+function togglePlay(){
+  if(isPlaying) pauseSong(); else { if(!audio.src||audio.readyState===0) loadSong(); playSong(); }
+}
+
+function nextSong(){
+  statsSkips++; updateStats();
+  if(isShuffle){ let r; do{r=Math.floor(Math.random()*songs.length);}while(r===curIdx); curIdx=r; }
+  else curIdx=(curIdx+1)%songs.length;
+  loadSong(); if(isPlaying) playSong();
+  showToast('⏭','Next: '+songs[curIdx].title);
+}
+
+function prevSong(){
+  if(audio.currentTime>3){audio.currentTime=0;return;}
+  curIdx=(curIdx-1+songs.length)%songs.length;
+  loadSong(); if(isPlaying) playSong();
+}
+
+function toggleShuffle(){
+  isShuffle=!isShuffle;
+  document.getElementById('shuf-btn').classList.toggle('lit',isShuffle);
+  showToast(isShuffle?'🔀':'➡️', isShuffle?'Shuffle On':'Shuffle Off');
+}
+
+function toggleRepeat(){
+  isRepeat=!isRepeat;
+  document.getElementById('rep-btn').classList.toggle('lit',isRepeat);
+  showToast(isRepeat?'🔁':'▶️', isRepeat?'Repeat On':'Repeat Off');
+}
+
+function toggleLike(){
+  const btn=document.getElementById('like-btn');
+  const idx=curIdx;
+  if(likedSongs.has(idx)){
+    likedSongs.delete(idx); btn.classList.remove('liked');
+    statsLikes=Math.max(0,statsLikes-1);
+    showToast('🤍','Removed from Likes');
+  } else {
+    likedSongs.add(idx); btn.classList.add('liked');
+    statsLikes++;
+    showToast('💜','Added to Liked Songs');
+  }
+  updateStats(); buildPlaylist();
+}
+
+function toggleLikeSong(e,i){
+  e.stopPropagation();
+  if(likedSongs.has(i)){likedSongs.delete(i); if(i===curIdx) document.getElementById('like-btn').classList.remove('liked'); statsLikes=Math.max(0,statsLikes-1);}
+  else{ likedSongs.add(i); if(i===curIdx) document.getElementById('like-btn').classList.add('liked'); statsLikes++; showToast('💜','Liked: '+songs[i].title); }
+  updateStats(); buildPlaylist();
+}
+
+/* ════════════════════════════════════════════
+   PROGRESS
+════════════════════════════════════════════ */
+audio.addEventListener('timeupdate',()=>{
+  if(!audio.duration) return;
+  const pct=(audio.currentTime/audio.duration)*100;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('mini-prog-fill').style.width=pct+'%';
+  document.getElementById('cur-time').textContent=fmt(audio.currentTime);
+  document.getElementById('dur-time').textContent=fmt(audio.duration);
+
+  // Update listened minutes stat every 10s
+  if(Math.floor(audio.currentTime)%10===0 && Math.floor(audio.currentTime)>0){
+    statsMins=Math.floor((statsMins*60+audio.currentTime)/60);
+    updateStats();
+  }
+});
+
+function seekTo(e){
+  if(!audio.duration) return;
+  const r=e.currentTarget.getBoundingClientRect();
+  audio.currentTime=((e.clientX-r.left)/r.width)*audio.duration;
+}
+document.getElementById('prog-wrap').addEventListener('click', seekTo);
+document.getElementById('mini-prog-wrap').addEventListener('click', seekTo);
+
+/* ════════════════════════════════════════════
+   VOLUME
+════════════════════════════════════════════ */
+audio.volume=0.75;
+function setVol(v){
+  audio.volume=v/100;
+  document.getElementById('vol-pct').textContent=v+'%';
+  document.getElementById('vol-fill').style.width=v+'%';
+}
+
+/* ════════════════════════════════════════════
+   ENDED
+════════════════════════════════════════════ */
+audio.addEventListener('ended',()=>{
+  if(isRepeat){ audio.currentTime=0; playSong(); }
+  else if(document.getElementById('autoplay').checked){ nextSong(); }
+  else { pauseSong(); }
+});
+
+/* ════════════════════════════════════════════
+   KEYBOARD
+════════════════════════════════════════════ */
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'&&e.target.type==='range') return;
+  if(e.code==='Space'){ e.preventDefault(); togglePlay(); }
+  if(e.code==='ArrowRight') nextSong();
+  if(e.code==='ArrowLeft')  prevSong();
+  const v=document.getElementById('vol');
+  if(e.code==='ArrowUp'   ){v.value=Math.min(100,+v.value+5); setVol(v.value);}
+  if(e.code==='ArrowDown' ){v.value=Math.max(0,  +v.value-5); setVol(v.value);}
+  if(e.code==='KeyL') toggleLike();
+  if(e.code==='KeyS') toggleShuffle();
+  if(e.code==='KeyR') toggleRepeat();
+});
+
+/* ════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════ */
+function showToast(icon, msg){
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<span class="toast-icon">${icon}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.classList.add('removing'); setTimeout(()=>t.remove(),300); }, 2200);
+}
+
+/* ════════════════════════════════════════════
+   STATS
+════════════════════════════════════════════ */
+function updateStats(){
+  document.getElementById('stat-played').textContent=statsPlayed;
+  document.getElementById('stat-likes').textContent=statsLikes;
+  document.getElementById('stat-mins').textContent=Math.max(statsMins,0);
+  document.getElementById('stat-skips').textContent=statsSkips;
+}
+
+/* ════════════════════════════════════════════
+   FORMAT TIME
+════════════════════════════════════════════ */
+function fmt(s){ const m=Math.floor(s/60); return m+':'+(Math.floor(s%60)+'').padStart(2,'0'); }
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+loadSong();
+buildGallery();
+showToast('👋','Welcome to BEATZ Ultra!');
+setTimeout(()=>showToast('⌨️','Tip: Space=Play  ←→=Skip  L=Like  S=Shuffle'), 3000);
+
+// Periodic ambient doodles when playing
+setInterval(()=>{
+  if(isPlaying && Math.random()<0.3){
+    const x=Math.random()*window.innerWidth;
+    const y=Math.random()*window.innerHeight;
+    drawMusicDoodle(x, y);
+  }
+}, 500);
+</script>
+</body>
+</html>

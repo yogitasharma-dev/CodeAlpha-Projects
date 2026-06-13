@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ishvari Art Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #110f0e;
+    --surface: #1a1715;
+    --border: rgba(201, 169, 110, 0.12);
+    --accent: #c9a96e;
+    --accent-red: #ff3b30;
+    --text: #f0ede6;
+    --muted: #8e8a82;
+    --pill-bg: #1d1a18;
+    --gold-glow: rgba(201, 169, 110, 0.2);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Background Luxury "YS" Watermark ── */
+  body::before {
+    content: "YS";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(12rem, 35vw, 45rem);
+    font-weight: 700;
+    color: rgba(201, 169, 110, 0.02);
+    pointer-events: none;
+    z-index: 1;
+    letter-spacing: -0.05em;
+  }
+
+  #fluidCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* ── 3D Premium Header Typography ── */
+  header {
+    padding: 5rem 4rem 2rem;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+
+  header h1 {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(2.2rem, 5vw, 4.2rem);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+    /* Luxury 3D Depth Shadow Spec */
+    text-shadow: 
+      0 1px 0 #d9c39a, 
+      0 2px 0 #bfa577, 
+      0 3px 0 #a6895b, 
+      0 4px 0 #8c7044,
+      0 12px 30px var(--gold-glow);
+  }
+
+  header p {
+    font-family: 'Playfair Display', serif;
+    color: var(--accent);
+    font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+    font-style: italic;
+    letter-spacing: 0.05em;
+    margin-top: 0.5rem;
+  }
+
+  /* ── Exhibition Navigation Filter Pills ── */
+  .filters {
+    padding: 1.5rem 4rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 5;
+  }
+
+  .pill {
+    padding: 0.55rem 1.4rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--pill-bg);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pill:hover { 
+    border-color: var(--accent); 
+    color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .pill.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #110f0e;
+    font-weight: 600;
+    box-shadow: 0 8px 20px var(--gold-glow);
+  }
+
+  /* ── Exhibition Grid (Ref: 1000195521.jpg Layout) ── */
+  .gallery-wrap {
+    padding: 3rem 4rem 5rem;
+    position: relative;
+    z-index: 5;
+  }
+
+  .gallery {
+    columns: 4;
+    column-gap: 1.5rem;
+  }
+
+  @media (max-width: 1200px) { .gallery { columns: 3; } }
+  @media (max-width: 850px)  { .gallery { columns: 2; } header, .filters, .gallery-wrap { padding-left: 1.5rem; padding-right: 1.5rem; } }
+  @media (max-width: 480px)  { .gallery { columns: 1; } }
+
+  .card {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+    position: relative;
+    border-radius: 14px; /* Matches the organic curved profiles of 1000195521.jpg */
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease, border-color 0.5s;
+  }
+
+  .card:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+    border-color: var(--accent);
+  }
+
+  /* ── Local High-Fidelity Canvas Fallbacks ── */
+  .canvas-block {
+    width: 100%;
+    height: var(--card-h, 320px);
+    background: linear-gradient(135deg, #24201d 0%, #171413 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .canvas-block::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--art-render);
+    background-size: cover;
+    background-position: center;
+    opacity: 0.88;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card:hover .canvas-block::before {
+    transform: scale(1.08);
+  }
+
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(17,15,14,0.95) 0%, rgba(17,15,14,0.3) 60%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    display: flex;
+    align-items: flex-end;
+    padding: 1.4rem;
+  }
+
+  .card:hover .card-overlay { opacity: 1; }
+
+  .card-meta h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    color: #fff;
+    margin-bottom: 0.2rem;
+  }
+
+  .card-meta span {
+    font-size: 0.72rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .expand-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.4s;
+    color: #fff;
+    font-size: 0.85rem;
+  }
+
+  .card:hover .expand-icon { opacity: 1; transform: rotate(90deg); }
+
+  /* ── Lightbox System ── */
+  #lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(10, 9, 8, 0.97);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  #lightbox.open { opacity: 1; pointer-events: all; }
+
+  .lb-inner {
+    position: relative;
+    max-width: 90vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+  }
+
+  .lb-preview-frame {
+    width: min(85vw, 500px);
+    height: 440px;
+    border-radius: 10px;
+    border: 1px solid rgba(201, 169, 110, 0.2);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.8);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .lb-info { text-align: center; }
+  .lb-info h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: #fff; }
+  .lb-info span { font-size: 0.78rem; color: var(--accent); text-transform: uppercase; margin-top: 0.2rem; display: inline-block; letter-spacing: 0.1em; }
+
+  .lb-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+  .lb-btn:hover { background: var(--accent); color: #110f0e; box-shadow: 0 0 15px var(--accent); }
+
+  #lb-prev { left: 2rem; }
+  #lb-next { right: 2rem; }
+  #lb-close { position: fixed; top: 2rem; right: 2rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #fff; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: background 0.3s; }
+  #lb-close:hover { background: var(--accent-red); color: white; }
+
+  #no-results {
+    display: none;
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--muted);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="fluidCanvas"></canvas>
+
+<header>
+  <h1>ISHVARI ART GALLERY</h1>
+  <p>Visual Art Exhibition Halls</p>
+</header>
+
+<div class="filters">
+  <button class="pill active" data-filter="all">All Masterpieces</button>
+  <button class="pill" data-filter="nature">Nature</button>
+  <button class="pill" data-filter="architecture">Architecture</button>
+  <button class="pill" data-filter="abstract">Abstract</button>
+  <button class="pill" data-filter="travel">Travel</button>
+</div>
+
+<div class="gallery-wrap">
+  <div class="gallery" id="gallery"></div>
+  <p id="no-results">No artworks found under this deck.</p>
+</div>
+
+<!-- Lightbox Modal -->
+<div id="lightbox">
+  <button id="lb-close">✕</button>
+  <button class="lb-btn" id="lb-prev">&#8592;</button>
+  <div class="lb-inner">
+    <div class="lb-preview-frame" id="lb-frame"></div>
+    <div class="lb-info">
+      <h2 id="lb-title"></h2>
+      <span id="lb-cat"></span>
+    </div>
+  </div>
+  <button class="lb-btn" id="lb-next">&#8594;</button>
+</div>
+
+<script>
+// Blending original requested data array with secure high fidelity rendering fallbacks
+const images = [
+  { title: 'Forest Mist Element', cat: 'nature', height: '390px', bg: 'url("https://picsum.photos/seed/forest1/600/800")' },
+  { title: 'City Arches Perspective', cat: 'architecture', height: '310px', bg: 'url("https://picsum.photos/seed/arch1/600/500")' },
+  { title: 'Color Wave Canvas', cat: 'abstract', height: '350px', bg: 'url("https://picsum.photos/seed/abs1/600/600")' },
+  { title: 'Golden Hour Spectrum', cat: 'travel', height: '410px', bg: 'url("https://picsum.photos/seed/travel1/600/700")' },
+  { title: 'Mountain Lake Vista', cat: 'nature', height: '300px', bg: 'url("https://picsum.photos/seed/nature2/600/500")' },
+  { title: 'Glass Tower Geometry', cat: 'architecture', height: '420px', bg: 'url("https://picsum.photos/seed/arch2/600/800")' },
+  { title: 'Neon Bloom Concept', cat: 'abstract', height: '320px', bg: 'url("https://picsum.photos/seed/abs2/600/500")' },
+  { title: 'Old Town Lane', cat: 'travel', height: '360px', bg: 'url("https://picsum.photos/seed/travel2/600/600")' },
+  { title: 'Autumn Path Hue', cat: 'nature', height: '400px', bg: 'url("https://picsum.photos/seed/nature3/600/700")' },
+  { title: 'Domed Structural Apex', cat: 'architecture', height: '310px', bg: 'url("https://picsum.photos/seed/arch3/600/500")' },
+  { title: 'Fluid Forms Composition', cat: 'abstract', height: '430px', bg: 'url("https://picsum.photos/seed/abs3/600/800")' },
+  { title: 'Harbour Crest View', cat: 'travel', height: '330px', bg: 'url("https://picsum.photos/seed/travel3/600/500")' }
+];
+
+const gallery = document.getElementById('gallery');
+const lightbox = document.getElementById('lightbox');
+const lbFrame = document.getElementById('lb-frame');
+const lbTitle = document.getElementById('lb-title');
+const lbCat = document.getElementById('lb-cat');
+
+let activeFilter = 'all';
+let currentIndex = 0;
+
+function visibleImages() {
+  return images.filter(i => activeFilter === 'all' || i.cat === activeFilter);
+}
+
+function buildGallery() {
+  gallery.innerHTML = '';
+  const vis = visibleImages();
+  document.getElementById('no-results').style.display = vis.length === 0 ? 'block' : 'none';
+  
+  vis.forEach((img, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    const block = document.createElement('div');
+    block.className = 'canvas-block';
+    block.style.setProperty('--card-h', img.height);
+    block.style.setProperty('--art-render', img.bg);
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'card-overlay';
+    overlay.innerHTML = `
+      <div class="card-meta">
+        <h3>${img.title}</h3>
+        <span>${img.cat.toUpperCase()}</span>
+      </div>
+    `;
+    
+    const expand = document.createElement('div');
+    expand.className = 'expand-icon';
+    expand.innerHTML = '⤢';
+    
+    card.appendChild(block);
+    card.appendChild(overlay);
+    card.appendChild(expand);
+    
+    card.addEventListener('click', () => openLightbox(idx));
+    gallery.appendChild(card);
+  });
+}
+
+function openLightbox(idx) {
+  const vis = visibleImages();
+  currentIndex = idx;
+  updateLightbox(vis);
+  lightbox.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateLightbox(vis) {
+  const img = vis[currentIndex];
+  lbFrame.style.background = img.bg;
+  lbFrame.style.backgroundSize = 'cover';
+  lbFrame.style.backgroundPosition = 'center';
+  lbTitle.textContent = img.title;
+  lbCat.textContent = img.cat.toUpperCase() + ' ARCHIVE';
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('lb-close').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+document.getElementById('lb-prev').addEventListener('click', e => {
+  e.stopPropagation();
+  const vis = visibleImages();
+  currentIndex = (currentIndex - 1 + vis.length) % vis.length;
+  updateLightbox(vis);
+});
+
+document.getElementById('lb-next').addEventListener('click', e => {
+  e.stopPropagation();
+  const vis = visibleImages();
+  currentIndex = (currentIndex + 1) % vis.length;
+  updateLightbox(vis);
+});
+
+document.querySelectorAll('.pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    activeFilter = pill.dataset.filter;
+    buildGallery();
+  });
+});
+
+/* ── Interactive Red & Gold Particle Engine ── */
+const canvas = document.getElementById('fluidCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function syncCanvasSize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', syncCanvasSize);
+syncCanvasSize();
+
+class InteractiveCrystal {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.size = Math.random() * 3.5 + 1;
+    this.speedX = Math.random() * 2 - 1;
+    this.speedY = Math.random() * 2 - 1;
+    // Luxurious split color space selection
+    this.color = Math.random() > 0.45 ? '#c9a96e' : '#ff3b30';
+    this.life = 1;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life -= 0.015;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.life;
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function spawnParticles(x, y) {
+  for (let i = 0; i < 2; i++) {
+    particles.push(new InteractiveCrystal(x, y));
+  }
+}
+
+window.addEventListener('mousemove', e => spawnParticles(e.clientX, e.clientY));
+window.addEventListener('touchmove', e => {
+  if(e.touches.length > 0) spawnParticles(e.touches[0].clientX, e.touches[0].clientY);
+});
+
+function animationLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < particles.length; i++) {
+    particles[i].update();
+    particles[i].draw();
+    if (particles[i].life <= 0) {
+      particles.splice(i, 1);
+      i--;
+    }
+  }
+  requestAnimationFrame(animationLoop);
+}
+
+buildGallery();
+animationLoop();
+</script>
+</body>
+</html>
