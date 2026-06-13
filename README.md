@@ -1,23 +1,28 @@
 # 🚀 My CodeAlpha Projects
 
-Welcome to my project repository! This collection showcases the initial web development projects I built during the CodeAlpha internship.
+Welcome to my project repository! This collection showcases the web development projects I built during my internship.
 
-## 🛠 Projects Included:
+## 🛠 Projects Overview
 
-### 1. Project-1: Interactive Calculator
-*   **Description:** A clean, functional web-based calculator.
-*   **Features:** Performs basic arithmetic operations with a user-friendly interface.
-*   **Tech Stack:** HTML, CSS, JavaScript.
+### 1. Interactive Calculator
+A clean, functional web-based calculator.
+![HTML](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JS](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
 
-### 2. Project-2: Art Gallery
-*   **Description:** A visual display page for showcasing artwork.
-*   **Features:** Responsive layout designed to present images elegantly.
-*   **Tech Stack:** HTML, CSS.
+<br>
 
-### 3. Project-3: Beatz Ultra (Music Studio UI)
-*   **Description:** A premium music streaming studio interface.
-*   **Features:** Features session statistics, library navigation, and a modern dark-mode aesthetic.
-*   **Tech Stack:** HTML, CSS.
+### 2. Art Gallery
+A visual display page for showcasing artwork with a responsive layout.
+![HTML](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+<br>
+
+### 3. Beatz Ultra (Music Studio UI)
+A premium music streaming interface with session statistics and modern aesthetics.
+![HTML](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 
 ---
 
